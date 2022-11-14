@@ -10,11 +10,12 @@
         pkgs = import nixpkgs { inherit system; };
       in
       {
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            pkgs.cargo
-            pkgs.rustc
-          ];
-        };
+         devShell =  pkgs.mkShell rec {
+            buildInputs = with pkgs; [
+	      cargo
+	      rustc
+	      rustPlatform.bindgenHook
+            ];
+         };
       });
 }
