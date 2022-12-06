@@ -11,10 +11,14 @@
       in
       {
          devShell =  pkgs.mkShell rec {
+            # RUST_BACKTRACE = "full";
             buildInputs = with pkgs; [
-	      cargo
-	      rustc
-	      rustPlatform.bindgenHook
+              cargo
+              rustc
+              rustPlatform.bindgenHook
+              rust-analyzer
+              rustPackages.clippy
+              rustfmt
             ];
          };
       });
