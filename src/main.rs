@@ -234,7 +234,8 @@ fn main() {
     use std::env;
     let args: Vec<_> = env::args().collect();
 
-    let size: isize = args[1].parse().unwrap();
+    let cluster_size: usize = args[1].parse().unwrap();
+    let size: isize = cluster_size as isize;
     //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
     let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
     let conv = |(x, y): (isize, isize)| (x + (size * y)) as usize;
@@ -280,7 +281,7 @@ fn main() {
         }
     }
 
-    let start = cluster_map.len() / 2;
+    let start: usize = cluster_size/2 + ((cluster_size/2)*cluster_size);
     println!("{}", start);
 
     let cluster_set: HashMap<usize, Vec<usize>> = cluster
@@ -311,7 +312,7 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    enumerate_vec(&cluster_set, size as usize, &vec![start], &mut graph_func);
+    enumerate_vec(&cluster_set, cluster_size, &vec![start], &mut graph_func);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
