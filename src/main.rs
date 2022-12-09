@@ -93,33 +93,39 @@ fn add_cluster(
     let (cluster_iso_list, vertex_type_cluster) =
         cluster_to_iso_sym(&cluster_vec, edge_list, iso_types, sym_types);
 
-    let iso_hash = iso_to_hash(&cluster_iso_list);
     let sym_hash = sym_to_hash(&vertex_type_cluster);
 
-    if !graph_multiplicity.contains_key(&iso_hash) {
-        let mut lattice_clone = lattice.clone();
-        lattice_clone.retain(|vertex, _| cluster.contains(vertex));
+    if !sym_hash_set.contains(&sym_hash) {
+        let iso_hash = iso_to_hash(&cluster_iso_list);
 
-        sym_hash_set.insert(sym_hash);
-        graph_multiplicity.insert(iso_hash, 1);
-        graph_bond_info.insert(iso_hash, cluster_iso_list);
+        match &mut graph_multiplicity.entry(iso_hash) {
+            hash_map::Entry::Vacant(_) => {
+                let mut lattice_clone = lattice.clone();
+                lattice_clone.retain(|vertex, _| cluster.contains(vertex));
 
-        let mut subgraph_func = |subcluster: &mut HashSet<usize>| {
-            add_subcluster(
-                subcluster,
-                edge_list,
-                iso_types,
-                iso_hash,
-                subgraph_multiplicity,
-            )
+                sym_hash_set.insert(sym_hash);
+                graph_multiplicity.insert(iso_hash, 1);
+                graph_bond_info.insert(iso_hash, cluster_iso_list);
+
+                let mut subgraph_func = |subcluster: &mut HashSet<usize>| {
+                    add_subcluster(
+                        subcluster,
+                        edge_list,
+                        iso_types,
+                        iso_hash,
+                        subgraph_multiplicity,
+                    )
+                };
+
+                for size in 2..cluster_vec.len() {
+                    enumerate_vec(&lattice_clone, size, &cluster_vec, &mut subgraph_func);
+                }
+            }
+            hash_map::Entry::Occupied(entry) => {
+                sym_hash_set.insert(sym_hash);
+                *entry.get_mut() += 1;
+            }
         };
-
-        for size in 2..cluster_vec.len() {
-            enumerate_vec(&lattice_clone, size, &cluster_vec, &mut subgraph_func);
-        }
-    } else if !sym_hash_set.contains(&sym_hash) {
-        sym_hash_set.insert(sym_hash);
-        graph_multiplicity.insert(iso_hash, graph_multiplicity[&iso_hash] + 1);
     };
 }
 
@@ -142,7 +148,7 @@ fn add_subcluster(
                 .and_modify(|counter| *counter += 1)
                 .or_insert(1);
         })
-        .or_insert(HashMap::from([(sub_iso_hash, 1)]));
+        .or_insert_with(|| HashMap::from([(sub_iso_hash, 1)]));
 }
 
 fn vsimple_vec(
@@ -236,23 +242,35 @@ fn main() {
 
     let cluster_size: usize = args[1].parse().unwrap();
     let size: isize = cluster_size as isize;
-    //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
-    let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
-    let conv = |(x, y): (isize, isize)| (x + (size * y)) as usize;
-    let dist2 = |(x0, y0): (isize, isize), (x1, y1): (isize, isize)| {
-        (isize::pow(x1 - x0, 2) + isize::pow(y1 - y0, 2)) as u8
-    };
 
-    let mut cluster_map =
-        HashMap::<(isize, isize), Vec<((isize, isize), u8, (isize, isize))>>::new();
+    // Triangular Lattice
+    //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
+    //let weights = vec![1, 1, 1, 1, 1, 1];
+
+    // Square Lattice
+    let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
+    let weights = vec![1, 1, 1, 1];
+
+    // Square Lattice nnn
+    //let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+    //let weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+
+    // Triangular Lattice nnn
+    //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1), (1, 2), (-1, 2), (1, -2), (2, 1), (-2, 1), (2, -1)];
+    //let weights = vec![1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
+
+    let conv = |(x, y): (isize, isize)| (x + (size * y)) as usize;
+
+    let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
     for x in 0..size {
         for y in 0..size {
             let coord = (x, y);
-            let info: Vec<((isize, isize), u8, (isize, isize))> = directions
+            let info: Vec<((isize, isize), u8, u32)> = directions
                 .clone()
                 .into_iter()
-                .map(|(d1, d2)| ((d1 + x, d2 + y), dist2(coord, (d1 + x, d2 + y)), (d1, d2)))
+                .enumerate()
+                .map(|(index, (d1, d2))| ((d1 + x, d2 + y), weights[index], index as u32))
                 .collect();
             cluster_map.insert(coord, info);
         }
@@ -277,11 +295,11 @@ fn main() {
         for (edge, iso, sym) in value {
             edge_list[converted].push(conv(*edge));
             iso_types[converted].push(*iso);
-            sym_types[converted].push(directions.iter().position(|x| x == sym).unwrap() as u32);
+            sym_types[converted].push(*sym);
         }
     }
 
-    let start: usize = cluster_size/2 + ((cluster_size/2)*cluster_size);
+    let start: usize = conv((size / 2, size / 2));
     println!("{}", start);
 
     let cluster_set: HashMap<usize, Vec<usize>> = cluster
