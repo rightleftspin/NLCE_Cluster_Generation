@@ -117,7 +117,7 @@ fn add_cluster(
                 };
 
                 for size in 2..cluster.len() {
-                    enumerate_vec(&lattice_clone, size, &cluster, &mut subgraph_func);
+                    enumerate(&lattice_clone, size, &cluster, &mut subgraph_func);
                 }
             }
             hash_map::Entry::Occupied(entry) => {
@@ -148,7 +148,7 @@ fn add_subcluster(
         .or_insert_with(|| HashMap::from([(sub_iso_hash, 1)]));
 }
 
-fn vsimple_vec(
+fn vsimple(
     edges: &HashMap<usize, Vec<usize>>,
     subgraph: &mut Vec<usize>,
     neighbors: &mut Vec<usize>,
@@ -179,7 +179,7 @@ fn vsimple_vec(
                 };
             };
 
-            if vsimple_vec(
+            if vsimple(
                 edges,
                 subgraph,
                 &mut new_neighbors,
@@ -205,7 +205,7 @@ fn vsimple_vec(
     has_int_leaf
 }
 
-fn enumerate_vec(
+fn enumerate(
     edge_list: &HashMap<usize, Vec<usize>>,
     size: usize,
     starting_vertices: &Vec<usize>,
@@ -221,7 +221,7 @@ fn enumerate_vec(
             .collect();
 
         let mut starting_subgraph = vec![*vertex];
-        vsimple_vec(
+        vsimple(
             edge_list,
             &mut starting_subgraph,
             &mut neighbors,
@@ -327,7 +327,7 @@ fn main() {
     use std::time::Instant;
     let now = Instant::now();
 
-    enumerate_vec(&cluster_set, cluster_size, &vec![start], &mut graph_func);
+    enumerate(&cluster_set, cluster_size, &vec![start], &mut graph_func);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
