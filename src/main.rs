@@ -174,10 +174,13 @@ fn vsimple(
             let mut new_neighbors = neighbors.clone();
 
             for vertex in edges[&neighbor].iter() {
-                if !subgraph.contains(vertex) & !new_guarding_set.contains(vertex) & !new_neighbors.contains(vertex) {
+                if !subgraph.contains(vertex)
+                    & !new_guarding_set.contains(vertex)
+                    & !new_neighbors.contains(vertex)
+                {
                     new_neighbors.push(*vertex);
                 };
-            };
+            }
 
             if vsimple(
                 edges,
