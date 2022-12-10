@@ -220,7 +220,7 @@ fn enumerate(
         let mut neighbors = edges[vertex]
             .iter()
             .cloned()
-            .filter(|vertex| !guarding_set.contains(vertex))
+            .filter(|neighbor| !guarding_set.contains(neighbor))
             .collect();
 
         let mut starting_subgraph = vec![*vertex];
@@ -358,5 +358,5 @@ fn main() {
     println!("Total Broken Down: {:?}", total_broken);
     //println!("{:?}", graph_bond);
     //println!("{:?}", sym_hash);
-    //println!("{:?}", subgraph_mult);
+    println!("{:?}", subgraph_mult);
 }
