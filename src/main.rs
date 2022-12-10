@@ -209,7 +209,7 @@ fn vsimple(
 }
 
 fn enumerate(
-    edge_list: &HashMap<usize, Vec<usize>>,
+    edges: &HashMap<usize, Vec<usize>>,
     size: usize,
     starting_vertices: &Vec<usize>,
     mut graph_func: &mut dyn FnMut(Vec<usize>),
@@ -217,7 +217,7 @@ fn enumerate(
     let mut guarding_set = HashSet::<usize>::new();
 
     for vertex in starting_vertices {
-        let mut neighbors = edge_list[vertex]
+        let mut neighbors = edges[vertex]
             .iter()
             .cloned()
             .filter(|vertex| !guarding_set.contains(vertex))
@@ -225,7 +225,7 @@ fn enumerate(
 
         let mut starting_subgraph = vec![*vertex];
         vsimple(
-            edge_list,
+            edges,
             &mut starting_subgraph,
             &mut neighbors,
             &guarding_set,
@@ -236,12 +236,62 @@ fn enumerate(
     }
 }
 
+fn gen_reg_lattice_2d(
+    size: usize,
+    directions: Vec<(isize, isize)>,
+    weights: Vec<u8>,
+) -> (usize, Vec<Vec<usize>>, Vec<Vec<u8>>, Vec<Vec<u32>>) {
+    let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
+
+    for x in 0..size as isize {
+        for y in 0..size as isize {
+            let coord = (x, y);
+            let info: Vec<((isize, isize), u8, u32)> = directions
+                .clone()
+                .into_iter()
+                .enumerate()
+                .map(|(index, (d1, d2))| ((d1 + x, d2 + y), weights[index], index as u32))
+                .collect();
+            cluster_map.insert(coord, info);
+        }
+    }
+    let cluster_keys: Vec<(isize, isize)> = cluster_map.keys().cloned().collect();
+
+    for (_, value) in cluster_map.iter_mut() {
+        value.retain(|(coord, _, _)| cluster_keys.contains(coord));
+    }
+
+    let mut edges = Vec::<Vec<usize>>::new();
+    let mut iso_types = Vec::<Vec<u8>>::new();
+    let mut sym_types = Vec::<Vec<u32>>::new();
+
+    edges.resize(cluster_map.len(), Vec::new());
+    iso_types.resize(cluster_map.len(), Vec::new());
+    sym_types.resize(cluster_map.len(), Vec::new());
+
+    // need to do again to get new keys or will end up with index out of bound errors
+    let mut cluster_keys: Vec<(isize, isize)> = cluster_map.keys().cloned().collect();
+    cluster_keys.sort();
+    let conv = |key| cluster_keys.iter().position(|coord| coord == key).unwrap();
+
+    for (key, value) in cluster_map.iter() {
+        let converted = conv(key);
+        for (edge, iso, sym) in value {
+            edges[converted].push(conv(edge));
+            iso_types[converted].push(*iso);
+            sym_types[converted].push(*sym);
+        }
+    }
+
+    let start: usize = conv(&(size as isize / 2, size as isize / 2));
+    (start, edges, iso_types, sym_types)
+}
+
 fn main() {
     use std::env;
     let args: Vec<_> = env::args().collect();
 
     let cluster_size: usize = args[1].parse().unwrap();
-    let size: isize = cluster_size as isize;
 
     // Triangular Lattice
     //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
@@ -259,53 +309,15 @@ fn main() {
     //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1), (1, 2), (-1, 2), (1, -2), (2, 1), (-2, 1), (2, -1)];
     //let weights = vec![1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
 
-    let conv = |(x, y): (isize, isize)| (x + (size * y)) as usize;
+    let (start, edges, iso_types, sym_types) =
+        gen_reg_lattice_2d(cluster_size, directions, weights);
+    println!("{start}");
 
-    let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
-
-    for x in 0..size {
-        for y in 0..size {
-            let coord = (x, y);
-            let info: Vec<((isize, isize), u8, u32)> = directions
-                .clone()
-                .into_iter()
-                .enumerate()
-                .map(|(index, (d1, d2))| ((d1 + x, d2 + y), weights[index], index as u32))
-                .collect();
-            cluster_map.insert(coord, info);
-        }
-    }
-    let cluster_keys = cluster_map.clone();
-    for (_, value) in cluster_map.iter_mut() {
-        value.retain(|(coord, _, _)| cluster_keys.contains_key(coord));
-    }
-
-    let mut cluster = Vec::<usize>::new();
-    let mut edge_list = Vec::<Vec<usize>>::new();
-    let mut iso_types = Vec::<Vec<u8>>::new();
-    let mut sym_types = Vec::<Vec<u32>>::new();
-    cluster.resize(cluster_map.len(), 0);
-    edge_list.resize(cluster_map.len(), Vec::new());
-    iso_types.resize(cluster_map.len(), Vec::new());
-    sym_types.resize(cluster_map.len(), Vec::new());
-
-    for (key, value) in cluster_map.iter() {
-        let converted = conv(*key);
-        cluster[converted] = converted;
-        for (edge, iso, sym) in value {
-            edge_list[converted].push(conv(*edge));
-            iso_types[converted].push(*iso);
-            sym_types[converted].push(*sym);
-        }
-    }
-
-    let start: usize = conv((size / 2, size / 2));
-    println!("{}", start);
-
-    let cluster_set: HashMap<usize, Vec<usize>> = cluster
+    let cluster_vertices: Vec<usize> = (0..edges.len()).collect();
+    let cluster_set: HashMap<usize, Vec<usize>> = cluster_vertices
         .iter()
         .cloned()
-        .zip(edge_list.iter().cloned())
+        .zip(edges.iter().cloned())
         .collect();
 
     let mut graph_mult = HashMap::<usize, usize>::new();
@@ -317,7 +329,7 @@ fn main() {
         add_cluster(
             cluster,
             &cluster_set,
-            &edge_list,
+            &edges,
             &iso_types,
             &sym_types,
             &mut graph_mult,
