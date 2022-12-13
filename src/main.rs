@@ -6,6 +6,7 @@ use petgraph::Undirected;
 use std::collections::hash_map;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
+use blake3;
 
 fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
@@ -291,23 +292,39 @@ fn main() {
     use std::env;
     let args: Vec<_> = env::args().collect();
 
-    let cluster_size: usize = args[1].parse().unwrap();
+    let nlce_type: String = args[1].parse().unwrap();
+    let cluster_size: usize = args[2].parse().unwrap();
+    let mut directions: Vec<(isize, isize)> = vec![];
+    let mut weights: Vec<u8> = vec![];
 
+
+    let options = ["triangle", "square", "square-next", "triangle-next"];
+    match nlce_type.as_str() {
+        "triangle" => {
     // Triangular Lattice
-    //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
-    //let weights = vec![1, 1, 1, 1, 1, 1];
-
+    directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
+    weights = vec![1, 1, 1, 1, 1, 1];
+        },
+        "square" => {
     // Square Lattice
-    let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
-    let weights = vec![1, 1, 1, 1];
-
+    directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
+    weights = vec![1, 1, 1, 1];
+        },
+        "square-next" => {
     // Square Lattice nnn
-    //let directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
-    //let weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+    directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+    weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+        },
+        "triangle-next" => {
+    // Square Lattice nnn
+    directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+    weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+        },
+        _ => {
+            println!("This is not a valid option, the current options are {:?}", options);
+        }
 
-    // Triangular Lattice nnn
-    //let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1), (1, 2), (-1, 2), (1, -2), (2, 1), (-2, 1), (2, -1)];
-    //let weights = vec![1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
+    };
 
     let (start, edges, iso_types, sym_types) =
         gen_reg_lattice_2d(cluster_size, directions, weights);
