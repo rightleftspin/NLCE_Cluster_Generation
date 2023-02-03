@@ -6,7 +6,9 @@ use petgraph::Undirected;
 use std::collections::hash_map;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
-use blake3;
+use std::fs::File;
+use std::io::{Write};
+
 
 fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
@@ -288,7 +290,7 @@ fn gen_reg_lattice_2d(
     (start, edges, iso_types, sym_types)
 }
 
-fn main() {
+fn main() -> std::io::Result<()>{
     use std::env;
     let args: Vec<_> = env::args().collect();
 
@@ -375,5 +377,21 @@ fn main() {
     println!("Total Broken Down: {:?}", total_broken);
     //println!("{:?}", graph_bond);
     //println!("{:?}", sym_hash);
-    println!("{:?}", subgraph_mult);
+    let graph_mult_json = serde_json::to_string(&graph_mult)?;
+    let subgraph_mult_json = serde_json::to_string(&subgraph_mult)?;
+    let graph_bond_json = serde_json::to_string(&graph_bond)?;
+
+    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_mult_{}_{}.json", nlce_type, cluster_size);
+    let mut output = File::create(path)?;
+    write!(output, "{}", graph_mult_json)?;
+
+    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/subgraph_mult_{}_{}.json", nlce_type, cluster_size);
+    let mut output = File::create(path)?;
+    write!(output, "{}", subgraph_mult_json)?;
+
+    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_bond_{}_{}.json", nlce_type, cluster_size);
+    let mut output = File::create(path)?;
+    write!(output, "{}", graph_bond_json)?;
+
+    Ok(())
 }

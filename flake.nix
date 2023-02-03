@@ -12,6 +12,7 @@
       {
          devShell =  pkgs.mkShell rec {
             # RUST_BACKTRACE = "full";
+	    RUSTFLAGS = "-C target-cpu=native";
             buildInputs = with pkgs; [
               cargo
               rustc
