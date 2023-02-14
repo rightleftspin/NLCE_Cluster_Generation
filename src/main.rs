@@ -119,6 +119,7 @@ fn add_cluster(
                     )
                 };
 
+                enumerate(&lattice_clone, 1, &cluster, &mut subgraph_func);
                 for size in 2..cluster.len() {
                     enumerate(&lattice_clone, size, &cluster, &mut subgraph_func);
                 }
