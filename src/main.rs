@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use itertools::izip;
 use nauty_pet::graph::CanonGraph;
 use petgraph::Undirected;
@@ -382,15 +380,15 @@ fn main() -> std::io::Result<()>{
     let subgraph_mult_json = serde_json::to_string(&subgraph_mult)?;
     let graph_bond_json = serde_json::to_string(&graph_bond)?;
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_mult_{}_{}.json", nlce_type, cluster_size);
+    let path = format!("./NLCE_Data/graph_mult_{}_{}.json", nlce_type, cluster_size);
     let mut output = File::create(path)?;
     write!(output, "{}", graph_mult_json)?;
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/subgraph_mult_{}_{}.json", nlce_type, cluster_size);
+    let path = format!("./NLCE_Data/subgraph_mult_{}_{}.json", nlce_type, cluster_size);
     let mut output = File::create(path)?;
     write!(output, "{}", subgraph_mult_json)?;
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_bond_{}_{}.json", nlce_type, cluster_size);
+    let path = format!("./NLCE_Data/graph_bond_{}_{}.json", nlce_type, cluster_size);
     let mut output = File::create(path)?;
     write!(output, "{}", graph_bond_json)?;
 
