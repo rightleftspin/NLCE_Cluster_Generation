@@ -288,7 +288,7 @@ fn main() -> std::io::Result<()>{
 
     let nlce_type: String = args[1].parse().unwrap();
     let cluster_size: usize = args[2].parse().unwrap();
-    let nlce_directory = "./NLCE_Data";
+    let nlce_directory = format!("./NLCE_Data/{}", nlce_type);
 
     let mut directions: Vec<(isize, isize)> = vec![];
     let mut weights: Vec<u8> = vec![];
@@ -372,6 +372,8 @@ fn main() -> std::io::Result<()>{
     let graph_mult_json = serde_json::to_string(&graph_mult)?;
     let subgraph_mult_json = serde_json::to_string(&subgraph_mult)?;
     let graph_bond_json = serde_json::to_string(&graph_bond)?;
+
+    std::fs::create_dir_all(&nlce_directory).unwrap();
 
     let graph_mult_path = format!("{}/graph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
     let subgraph_mult_path = format!("{}/subgraph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
