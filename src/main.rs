@@ -238,6 +238,8 @@ fn gen_reg_lattice_2d(
 ) -> (usize, Vec<Vec<usize>>, Vec<Vec<u8>>, Vec<Vec<u32>>) {
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
+    // Buffer size
+    let size = 2 * size;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
@@ -310,11 +312,11 @@ fn main() -> std::io::Result<()>{
     directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
     weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
         },
-  //      "triangle-next" => {
-  //  // Square Lattice nnn
-  //  directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
-  //  weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
-  //      },
+        "triangle-next" => {
+    // Triangle Lattice nnn
+    directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1), (-1, 1), (1, 2), (2, 1), (1, -1), (-2, -1), (-1, -2)];
+    weights = vec![1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
+        },
         _ => {
             println!("This is not a valid option, the current options are {:?}", options);
         }
