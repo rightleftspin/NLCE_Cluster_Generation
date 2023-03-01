@@ -310,11 +310,11 @@ fn main() -> std::io::Result<()>{
     directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
     weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
         },
-        "triangle-next" => {
-    // Square Lattice nnn
-    directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
-    weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
-        },
+  //      "triangle-next" => {
+  //  // Square Lattice nnn
+  //  directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+  //  weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+  //      },
         _ => {
             println!("This is not a valid option, the current options are {:?}", options);
         }
