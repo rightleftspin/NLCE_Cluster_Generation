@@ -239,7 +239,7 @@ fn gen_reg_lattice_2d(
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
     // Buffer size
-    let size = 2 * size;
+    let size = size + 6;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
