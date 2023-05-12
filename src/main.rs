@@ -302,6 +302,11 @@ fn main() -> std::io::Result<()>{
     directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
     weights = vec![1, 1, 1, 1, 1, 1];
         },
+        "square_off" => {
+    // Square Off diagonal Lattice
+    directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
+    weights = vec![1, 1, 2, 1, 1, 2];
+        },
         "square" => {
     // Square Lattice
     directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1)];
