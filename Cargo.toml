@@ -1,5 +1,5 @@
 [package]
-name = "NLCE-Rust"
+name = "nlce_cluster_generation"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use itertools::izip;
 use nauty_pet::graph::CanonGraph;
 use petgraph::Undirected;
@@ -9,18 +7,12 @@ use std::hash::{Hash, Hasher};
 use std::fs::File;
 use std::io::{Write};
 
-
-fn _print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>())
-}
-
-fn cluster_to_iso_sym(
+fn cluster_to_uncanon_sym(
     cluster: &[usize],
     edge_list: &[Vec<usize>],
     iso_types: &[Vec<u8>],
     sym_types: &[Vec<u32>],
 ) -> (Vec<(usize, usize, u8)>, Vec<usize>) {
-    // Takes cluster (sorted) and returns the corresponding ismorphic edge list and vertex type list
     let mut uncanon_list: Vec<(usize, usize, u8)> = vec![];
     let mut vertex_type: Vec<usize> = vec![];
     for (index, &vertex) in cluster.iter().enumerate() {
@@ -48,7 +40,6 @@ fn cluster_to_iso(
     edge_list: &[Vec<usize>],
     iso_types: &[Vec<u8>],
 ) -> Vec<(usize, usize, u8)> {
-    // Takes cluster (unsorted) and returns the corresponding isomorphic edge list
     let mut uncanon_list: Vec<(usize, usize, u8)> = vec![];
     for (index, &vertex) in cluster.iter().enumerate() {
         for (&edge, &weight) in edge_list[vertex].iter().zip(iso_types[vertex].iter()) {
@@ -93,7 +84,7 @@ fn add_cluster(
     cluster.sort();
 
     let (cluster_iso_list, vertex_type_cluster) =
-        cluster_to_iso_sym(&cluster, edge_list, iso_types, sym_types);
+        cluster_to_uncanon_sym(&cluster, edge_list, iso_types, sym_types);
 
     let sym_hash = sym_to_hash(&vertex_type_cluster);
 
@@ -247,6 +238,8 @@ fn gen_reg_lattice_2d(
 ) -> (usize, Vec<Vec<usize>>, Vec<Vec<u8>>, Vec<Vec<u32>>) {
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
+    // Buffer size
+    let size = size + 6;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
@@ -297,9 +290,10 @@ fn main() -> std::io::Result<()>{
 
     let nlce_type: String = args[1].parse().unwrap();
     let cluster_size: usize = args[2].parse().unwrap();
+    let nlce_directory = format!("./NLCE_Data/{}", nlce_type);
+
     let mut directions: Vec<(isize, isize)> = vec![];
     let mut weights: Vec<u8> = vec![];
-
 
     let options = ["triangle", "square", "square-next", "triangle-next"];
     match nlce_type.as_str() {
@@ -307,6 +301,11 @@ fn main() -> std::io::Result<()>{
     // Triangular Lattice
     directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
     weights = vec![1, 1, 1, 1, 1, 1];
+        },
+        "square_off" => {
+    // Square Off diagonal Lattice
+    directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
+    weights = vec![1, 1, 2, 1, 1, 2];
         },
         "square" => {
     // Square Lattice
@@ -319,9 +318,9 @@ fn main() -> std::io::Result<()>{
     weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
         },
         "triangle-next" => {
-    // Square Lattice nnn
-    directions = vec![(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
-    weights = vec![1, 1, 1, 1, 2, 2, 2, 2];
+    // Triangle Lattice nnn
+    directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1), (-1, 1), (1, 2), (2, 1), (1, -1), (-2, -1), (-1, -2)];
+    weights = vec![1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
         },
         _ => {
             println!("This is not a valid option, the current options are {:?}", options);
@@ -331,7 +330,6 @@ fn main() -> std::io::Result<()>{
 
     let (start, edges, iso_types, sym_types) =
         gen_reg_lattice_2d(cluster_size, directions, weights);
-    println!("{start}");
 
     let cluster_vertices: Vec<usize> = (0..edges.len()).collect();
     let cluster_set: HashMap<usize, Vec<usize>> = cluster_vertices
@@ -376,23 +374,25 @@ fn main() -> std::io::Result<()>{
     println!("Isomorphically Distinct: {:?}", graph_mult.len());
     println!("Total: {:?}", total);
     println!("Total Broken Down: {:?}", total_broken);
-    //println!("{:?}", graph_bond);
-    //println!("{:?}", sym_hash);
+
+
     let graph_mult_json = serde_json::to_string(&graph_mult)?;
     let subgraph_mult_json = serde_json::to_string(&subgraph_mult)?;
     let graph_bond_json = serde_json::to_string(&graph_bond)?;
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_mult_{}_{}.json", nlce_type, cluster_size);
-    let mut output = File::create(path)?;
-    write!(output, "{}", graph_mult_json)?;
+    std::fs::create_dir_all(&nlce_directory).unwrap();
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/subgraph_mult_{}_{}.json", nlce_type, cluster_size);
-    let mut output = File::create(path)?;
-    write!(output, "{}", subgraph_mult_json)?;
+    let graph_mult_path = format!("{}/graph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
+    let subgraph_mult_path = format!("{}/subgraph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
+    let graph_bond_path = format!("{}/graph_bond_{}_{}.json", nlce_directory, nlce_type, cluster_size);
 
-    let path = format!("/home/rightleftspin/Git_Repos/NLCE-Rust/data/graph_bond_{}_{}.json", nlce_type, cluster_size);
-    let mut output = File::create(path)?;
-    write!(output, "{}", graph_bond_json)?;
+    let mut graph_mult_output = File::create(graph_mult_path)?;
+    let mut subgraph_mult_output = File::create(subgraph_mult_path)?;
+    let mut graph_bond_output = File::create(graph_bond_path)?;
+
+    write!(graph_mult_output, "{}", graph_mult_json)?;
+    write!(subgraph_mult_output, "{}", subgraph_mult_json)?;
+    write!(graph_bond_output, "{}", graph_bond_json)?;
 
     Ok(())
 }

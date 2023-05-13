@@ -3,19 +3,6 @@
 version = 3
 
 [[package]]
-name = "NLCE-Rust"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "itertools",
- "md-5",
- "nauty-pet",
- "petgraph",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ahash"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -380,6 +367,19 @@ dependencies = [
  "nauty-Traces-sys",
  "petgraph",
  "thiserror",
+]
+
+[[package]]
+name = "nlce_cluster_generation"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "itertools",
+ "md-5",
+ "nauty-pet",
+ "petgraph",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
