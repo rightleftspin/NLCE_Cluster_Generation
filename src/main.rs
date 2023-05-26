@@ -77,7 +77,7 @@ fn add_cluster(
     iso_types: &[Vec<u8>],
     sym_types: &[Vec<u32>],
     graph_multiplicity: &mut HashMap<usize, usize>,
-    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, usize>>,
+    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
     graph_bond_info: &mut HashMap<usize, Vec<(usize, usize, u8)>>,
     sym_hash_set: &mut HashSet<usize>,
 ) {
@@ -128,7 +128,7 @@ fn add_subcluster(
     edge_list: &[Vec<usize>],
     iso_types: &[Vec<u8>],
     iso_hash: usize,
-    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, usize>>,
+    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
 ) {
     let subcluster_iso_list = cluster_to_iso(&cluster, edge_list, iso_types);
     let sub_iso_hash = iso_to_hash(&subcluster_iso_list);
@@ -137,10 +137,10 @@ fn add_subcluster(
         .and_modify(|subgraph_info| {
             subgraph_info
                 .entry(sub_iso_hash)
-                .and_modify(|counter| *counter += 1)
-                .or_insert(1);
+                .and_modify(|(_order, counter)| *counter += 1)
+                .or_insert((cluster.len(), 1));
         })
-        .or_insert_with(|| HashMap::from([(sub_iso_hash, 1)]));
+        .or_insert_with(|| HashMap::from([(sub_iso_hash, (cluster.len(), 1))]));
 }
 
 fn vsimple(
@@ -295,14 +295,14 @@ fn main() -> std::io::Result<()>{
     let mut directions: Vec<(isize, isize)> = vec![];
     let mut weights: Vec<u8> = vec![];
 
-    let options = ["triangle", "square", "square-next", "triangle-next"];
+    let options = ["triangle", "square", "square-next", "ani-triangle", "triangle-next"];
     match nlce_type.as_str() {
         "triangle" => {
     // Triangular Lattice
     directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
     weights = vec![1, 1, 1, 1, 1, 1];
         },
-        "square_off" => {
+        "ani-triangle" => {
     // Square Off diagonal Lattice
     directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
     weights = vec![1, 1, 2, 1, 1, 2];
@@ -339,7 +339,7 @@ fn main() -> std::io::Result<()>{
         .collect();
 
     let mut graph_mult = HashMap::<usize, usize>::new();
-    let mut subgraph_mult = HashMap::<usize, HashMap<usize, usize>>::new();
+    let mut subgraph_mult = HashMap::<usize, HashMap<usize, (usize, usize)>>::new();
     let mut graph_bond = HashMap::<usize, Vec<(usize, usize, u8)>>::new();
     let mut sym_hash = HashSet::<usize>::new();
 
