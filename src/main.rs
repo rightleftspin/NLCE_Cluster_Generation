@@ -57,6 +57,39 @@ fn cluster_to_iso(
     uncanon_list
 }
 
+fn cluster_to_tr(
+    cluster: &[usize]
+) -> (Vec<isize>, usize) {
+    // transformations in a closure: identity, 180 rotation, diagonal flip x = y, diagonal flip x = -y
+    let transform = |x| (x, 136 - x, ((x * 17) - ((x / 17) * (288))), ((560 - (17 * x)) + (288 * (x / 17))));
+    let cluster_orbit = cluster.iter().fold(vec![vec![], vec![], vec![], vec![]], |mut acc, x| {
+        let temp = transform(*x as isize);
+        acc[0].push(*x as isize);
+        acc[1].push(temp.1);
+        acc[2].push(temp.2);
+        acc[3].push(temp.3);
+        acc
+    });
+    let mut new_orbit: Vec<Vec<isize>> = vec![];
+    for mut cl in cluster_orbit {
+        cl.sort();
+        let cl_min = cl[0];
+        new_orbit.push(cl.iter().cloned().map(|x| x - cl_min).collect());
+    }
+    new_orbit.sort();
+
+    let mut graph_hasher = hash_map::DefaultHasher::new();
+    new_orbit.hash(&mut graph_hasher);
+    (new_orbit[0].clone(), graph_hasher.finish() as usize)
+}
+
+//fn tr_to_hash(uncanon_list: &[(usize, usize, u8)]) -> usize {
+//    let canon_graph = CanonGraph::<(), u8, Undirected, usize>::from_edges(uncanon_list);
+//    let mut graph_hasher = hash_map::DefaultHasher::new();
+//    canon_graph.hash(&mut graph_hasher);
+//    graph_hasher.finish() as usize
+//}
+
 fn iso_to_hash(uncanon_list: &[(usize, usize, u8)]) -> usize {
     let canon_graph = CanonGraph::<(), u8, Undirected, usize>::from_edges(uncanon_list);
     let mut graph_hasher = hash_map::DefaultHasher::new();
@@ -78,7 +111,7 @@ fn add_cluster(
     sym_types: &[Vec<u32>],
     graph_multiplicity: &mut HashMap<usize, usize>,
     subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
-    graph_bond_info: &mut HashMap<usize, Vec<(usize, usize, u8)>>,
+    graph_bond_info: &mut HashMap<usize, Vec<(isize, isize)>>,
     sym_hash_set: &mut HashSet<usize>,
 ) {
     cluster.sort();
@@ -89,7 +122,7 @@ fn add_cluster(
     let sym_hash = sym_to_hash(&vertex_type_cluster);
 
     if !sym_hash_set.contains(&sym_hash) {
-        let iso_hash = iso_to_hash(&cluster_iso_list);
+        let (form, iso_hash) = cluster_to_tr(&cluster);
 
         match &mut graph_multiplicity.entry(iso_hash) {
             hash_map::Entry::Vacant(_) => {
@@ -98,7 +131,7 @@ fn add_cluster(
 
                 sym_hash_set.insert(sym_hash);
                 graph_multiplicity.insert(iso_hash, 1);
-                graph_bond_info.insert(iso_hash, cluster_iso_list);
+                graph_bond_info.insert(iso_hash, form.iter().map(|x| (x % 17, x / 17) ).collect());
 
                 let mut subgraph_func = |subcluster: Vec<usize>| {
                     add_subcluster(
@@ -130,8 +163,8 @@ fn add_subcluster(
     iso_hash: usize,
     subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
 ) {
-    let subcluster_iso_list = cluster_to_iso(&cluster, edge_list, iso_types);
-    let sub_iso_hash = iso_to_hash(&subcluster_iso_list);
+    //let subcluster_iso_list = cluster_to_iso(&cluster, edge_list, iso_types);
+    let (_, sub_iso_hash) = cluster_to_tr(&cluster);
     subgraph_multiplicity
         .entry(iso_hash)
         .and_modify(|subgraph_info| {
@@ -239,7 +272,7 @@ fn gen_reg_lattice_2d(
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
     // Buffer size
-    let size = size + 6;
+    let size = 17;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
@@ -340,7 +373,7 @@ fn main() -> std::io::Result<()>{
 
     let mut graph_mult = HashMap::<usize, usize>::new();
     let mut subgraph_mult = HashMap::<usize, HashMap<usize, (usize, usize)>>::new();
-    let mut graph_bond = HashMap::<usize, Vec<(usize, usize, u8)>>::new();
+    let mut graph_bond = HashMap::<usize, Vec<(isize, isize)>>::new();
     let mut sym_hash = HashSet::<usize>::new();
 
     let mut graph_func = |cluster: Vec<usize>| {
@@ -376,9 +409,9 @@ fn main() -> std::io::Result<()>{
     println!("Total Broken Down: {:?}", total_broken);
 
 
-    let graph_mult_json = serde_json::to_string(&graph_mult)?;
-    let subgraph_mult_json = serde_json::to_string(&subgraph_mult)?;
-    let graph_bond_json = serde_json::to_string(&graph_bond)?;
+    let graph_mult_json = serde_json::to_string_pretty(&graph_mult)?;
+    let subgraph_mult_json = serde_json::to_string_pretty(&subgraph_mult)?;
+    let graph_bond_json = serde_json::to_string_pretty(&graph_bond)?;
 
     std::fs::create_dir_all(&nlce_directory).unwrap();
 
