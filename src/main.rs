@@ -78,7 +78,7 @@ fn add_cluster(
     sym_types: &[Vec<u32>],
     graph_multiplicity: &mut HashMap<usize, usize>,
     subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
-    graph_bond_info: &mut HashMap<usize, Vec<(usize, usize, u8)>>,
+    graph_bond_info: &mut HashMap<usize, Vec<(usize, usize)>>,
     sym_hash_set: &mut HashSet<usize>,
 ) {
     cluster.sort();
@@ -98,7 +98,7 @@ fn add_cluster(
 
                 sym_hash_set.insert(sym_hash);
                 graph_multiplicity.insert(iso_hash, 1);
-                graph_bond_info.insert(iso_hash, cluster_iso_list);
+                graph_bond_info.insert(iso_hash, cluster.iter().map(|x| (x % 17, x / 17)).collect());
 
                 let mut subgraph_func = |subcluster: Vec<usize>| {
                     add_subcluster(
@@ -239,7 +239,8 @@ fn gen_reg_lattice_2d(
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
     // Buffer size
-    let size = size + 6;
+    //let size = size + 6;
+    let size = 17;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
@@ -305,7 +306,7 @@ fn main() -> std::io::Result<()>{
         "ani-triangle" => {
     // Square Off diagonal Lattice
     directions = vec![(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)];
-    weights = vec![1, 1, 2, 1, 1, 2];
+    weights = vec![1, 2, 1, 1, 2, 1];
         },
         "square" => {
     // Square Lattice
@@ -340,7 +341,7 @@ fn main() -> std::io::Result<()>{
 
     let mut graph_mult = HashMap::<usize, usize>::new();
     let mut subgraph_mult = HashMap::<usize, HashMap<usize, (usize, usize)>>::new();
-    let mut graph_bond = HashMap::<usize, Vec<(usize, usize, u8)>>::new();
+    let mut graph_bond = HashMap::<usize, Vec<(usize, usize)>>::new();
     let mut sym_hash = HashSet::<usize>::new();
 
     let mut graph_func = |cluster: Vec<usize>| {
