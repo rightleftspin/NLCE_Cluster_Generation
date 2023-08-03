@@ -59,24 +59,98 @@ fn cluster_to_iso(
 
 fn cluster_to_tr(cluster: &[usize]) -> (Vec<isize>, usize) {
     // transformations in a closure: identity, 180 rotation, diagonal flip x = y, diagonal flip x = -y
-    let transform = |x| {
+    //let transform = |x| {
+    //    (
+    //        x,
+    //        136 - x,
+    //        ((x * 17) - ((x / 17) * (288))),
+    //        ((560 - (17 * x)) + (288 * (x / 17))),
+    //    )
+    //};
+    // transformations in a closure: identity, rotations starting with 60 ending at 300, flips
+    // starting at 0, ending at 150
+    let transform = |x: isize| {
         (
             x,
-            136 - x,
-            ((x * 17) - ((x / 17) * (288))),
-            ((560 - (17 * x)) + (288 * (x / 17))),
+            ((18 * x) - (307 * (x / 17)) + 8),
+            ((17 * x) - (307 * (x / 17)) + 152),
+            (288 - x),
+            ((-18 * x) + (307 * (x / 17)) + 280),
+            ((-17 * x) + (307 * (x / 17)) + 136),
+            (x - (35 * (x / 17)) + 280),
+            ((18 * x) - (323 * (x / 17)) + 136),
+            ((17 * x) - (288 * (x / 17))),
+            (-x + (35 * (x / 17)) + 8),
+            ((-18 * x) + (323 * (x / 17)) + 152),
+            ((-17 * x) + (288 * (x / 17)) + 288),
         )
     };
     let cluster_orbit = cluster
         .iter()
-        .fold(vec![vec![], vec![], vec![], vec![]], |mut acc, x| {
+        .fold(vec![vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![]], |mut acc, x| {
             let temp = transform(*x as isize);
             acc[0].push(*x as isize);
             acc[1].push(temp.1);
             acc[2].push(temp.2);
             acc[3].push(temp.3);
+            acc[4].push(temp.4);
+            acc[5].push(temp.5);
+            acc[6].push(temp.6);
+            acc[7].push(temp.7);
+            acc[8].push(temp.8);
+            acc[9].push(temp.9);
+            acc[10].push(temp.10);
+            acc[11].push(temp.11);
             acc
         });
+    // transformations in a closure: identity, rotations starting with 0 ending at 270, flips
+    // starting at 0, ending at 135
+    //let transform = |x: isize| {
+    //    (
+    //        x,
+    //        (17 * x) - (290 * (x / 17)) + 16,
+    //        (288 - x),
+    //        (-17 * x) + (290 * (x / 17)) + 272,
+    //        (x - (34 * (x / 17)) + 272),
+    //        (17 * x) - (288 * (x / 17)),
+    //        ((-x) + (34 * (x / 17)) + 16),
+    //        (-17 * x) + (288 * (x / 17)) + 288
+    //    )
+    //};
+    //let cluster_orbit = cluster
+    //    .iter()
+    //    .fold(vec![vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![]], |mut acc, x| {
+    //        let temp = transform(*x as isize);
+    //        acc[0].push(*x as isize);
+    //        acc[1].push(temp.1);
+    //        acc[2].push(temp.2);
+    //        acc[3].push(temp.3);
+    //        acc[4].push(temp.4);
+    //        acc[5].push(temp.5);
+    //        acc[6].push(temp.6);
+    //        acc[7].push(temp.7);
+    //        acc
+    //    });
+    // transformations in a closure: identity, rotations starting with 0 ending at 270, flips
+    // starting at 0, ending at 135
+    //let transform = |x: isize| {
+    //    (
+    //        x,
+    //        (288 - x),
+    //        (17 * x) - (288 * (x / 17)),
+    //        (-17 * x) + (288 * (x / 17)) + 288
+    //    )
+    //};
+    //let cluster_orbit = cluster
+    //    .iter()
+    //    .fold(vec![vec![], vec![], vec![], vec![]], |mut acc, x| {
+    //        let temp = transform(*x as isize);
+    //        acc[0].push(*x as isize);
+    //        acc[1].push(temp.1);
+    //        acc[2].push(temp.2);
+    //        acc[3].push(temp.3);
+    //        acc
+    //    });
     let mut new_orbit: Vec<Vec<isize>> = vec![];
     for mut cl in cluster_orbit {
         cl.sort();
