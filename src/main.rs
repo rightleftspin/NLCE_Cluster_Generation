@@ -77,7 +77,7 @@ fn add_cluster(
     iso_types: &[Vec<u8>],
     sym_types: &[Vec<u32>],
     graph_multiplicity: &mut HashMap<usize, usize>,
-    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
+    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, usize>>,
     graph_bond_info: &mut HashMap<usize, Vec<(usize, usize, u8)>>,
     sym_hash_set: &mut HashSet<usize>,
 ) {
@@ -128,7 +128,7 @@ fn add_subcluster(
     edge_list: &[Vec<usize>],
     iso_types: &[Vec<u8>],
     iso_hash: usize,
-    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, (usize, usize)>>,
+    subgraph_multiplicity: &mut HashMap<usize, HashMap<usize, usize>>,
 ) {
     let subcluster_iso_list = cluster_to_iso(&cluster, edge_list, iso_types);
     let sub_iso_hash = iso_to_hash(&subcluster_iso_list);
@@ -137,10 +137,10 @@ fn add_subcluster(
         .and_modify(|subgraph_info| {
             subgraph_info
                 .entry(sub_iso_hash)
-                .and_modify(|(_order, counter)| *counter += 1)
-                .or_insert((cluster.len(), 1));
+                .and_modify(|counter| *counter += 1)
+                .or_insert(1);
         })
-        .or_insert_with(|| HashMap::from([(sub_iso_hash, (cluster.len(), 1))]));
+        .or_insert_with(|| HashMap::from([(sub_iso_hash,  1)]));
 }
 
 fn vsimple(
@@ -239,7 +239,7 @@ fn gen_reg_lattice_2d(
     let mut cluster_map = HashMap::<(isize, isize), Vec<((isize, isize), u8, u32)>>::new();
 
     // Buffer size
-    let size = size + 6;
+    let size = size;
     for x in 0..size as isize {
         for y in 0..size as isize {
             let coord = (x, y);
@@ -280,8 +280,8 @@ fn gen_reg_lattice_2d(
         }
     }
 
-    let start: usize = conv(&(size as isize / 2, size as isize / 2));
-    (start, edges, iso_types, sym_types)
+    let _start: usize = conv(&(size as isize / 2, size as isize / 2));
+    (_start, edges, iso_types, sym_types)
 }
 
 fn main() -> std::io::Result<()>{
@@ -290,6 +290,7 @@ fn main() -> std::io::Result<()>{
 
     let nlce_type: String = args[1].parse().unwrap();
     let cluster_size: usize = args[2].parse().unwrap();
+    let c_size: usize = args[3].parse().unwrap();
     let nlce_directory = format!("./NLCE_Data/{}", nlce_type);
 
     let mut directions: Vec<(isize, isize)> = vec![];
@@ -328,7 +329,7 @@ fn main() -> std::io::Result<()>{
 
     };
 
-    let (start, edges, iso_types, sym_types) =
+    let (_start, edges, iso_types, sym_types) =
         gen_reg_lattice_2d(cluster_size, directions, weights);
 
     let cluster_vertices: Vec<usize> = (0..edges.len()).collect();
@@ -339,7 +340,7 @@ fn main() -> std::io::Result<()>{
         .collect();
 
     let mut graph_mult = HashMap::<usize, usize>::new();
-    let mut subgraph_mult = HashMap::<usize, HashMap<usize, (usize, usize)>>::new();
+    let mut subgraph_mult = HashMap::<usize, HashMap<usize, usize>>::new();
     let mut graph_bond = HashMap::<usize, Vec<(usize, usize, u8)>>::new();
     let mut sym_hash = HashSet::<usize>::new();
 
@@ -360,7 +361,7 @@ fn main() -> std::io::Result<()>{
     use std::time::Instant;
     let now = Instant::now();
 
-    enumerate(&cluster_set, cluster_size, &vec![start], &mut graph_func);
+    enumerate(&cluster_set, c_size, &Vec::from_iter(0..16), &mut graph_func);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
@@ -382,9 +383,9 @@ fn main() -> std::io::Result<()>{
 
     std::fs::create_dir_all(&nlce_directory).unwrap();
 
-    let graph_mult_path = format!("{}/graph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
-    let subgraph_mult_path = format!("{}/subgraph_mult_{}_{}.json", nlce_directory, nlce_type, cluster_size);
-    let graph_bond_path = format!("{}/graph_bond_{}_{}.json", nlce_directory, nlce_type, cluster_size);
+    let graph_mult_path = format!("{}/graph_mult_{}_{}.json", nlce_directory, nlce_type, c_size);
+    let subgraph_mult_path = format!("{}/subgraph_mult_{}_{}.json", nlce_directory, nlce_type, c_size);
+    let graph_bond_path = format!("{}/graph_bond_{}_{}.json", nlce_directory, nlce_type, c_size);
 
     let mut graph_mult_output = File::create(graph_mult_path)?;
     let mut subgraph_mult_output = File::create(subgraph_mult_path)?;
